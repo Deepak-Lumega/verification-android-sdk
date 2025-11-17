@@ -4,14 +4,25 @@ import com.sinch.verification.core.auth.AuthorizationInterceptor
 import com.sinch.verification.seamless.BuildConfig
 import com.sinch.verification.seamless.SeamlessHeaderInterceptor
 import com.sinch.verification.seamless.config.SeamlessVerificationConfig
+import okhttp3.Dns
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
+import java.net.Inet4Address
+import java.net.InetAddress
+import java.net.UnknownHostException
 import javax.net.SocketFactory
 
 class SeamlessRetrofitProvider {
     companion object {
 
         const val INDIA_COUNTRY_CODE = "+91"
+
+        object Ipv4Dns : Dns {
+            override fun lookup(hostname: String): List<InetAddress> {
+                return Dns.SYSTEM.lookup(hostname)
+                    .filterIsInstance<Inet4Address>()
+            }
+        }
 
         /**
          * Builds a Retrofit instance for verification service with India-specific endpoint routing.
@@ -41,6 +52,7 @@ class SeamlessRetrofitProvider {
                 // Ensure proper URL joining by removing trailing slash from base URL if present
                 val baseUrlWithoutTrailingSlash = BuildConfig.API_BASE_URL_IN.removeSuffix("/")
                 baseUrl = "$baseUrlWithoutTrailingSlash/verification/v1/"
+                newClientBuilder.dns(Ipv4Dns)
             }
 
             return config.globalConfig.retrofit
